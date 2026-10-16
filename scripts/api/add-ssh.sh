@@ -1,0 +1,48 @@
+#!/usr/bin/env bash
+# ========================================================
+# Project: Autoscript VPN by vvip
+# Description: API - create SSH account (JSON in/out)
+# License: Apache License 2.0 (see LICENSE file)
+# Repository: https://github.com/vvip/autoscript
+# ========================================================
+. /usr/local/sbin/lib/account.sh
+db_init
+domain=$(get_domain); ip=$(get_ip)
+
+input=$(cat)
+user=$(echo "$input" | jq -r '.username // empty' 2>/dev/null)
+pass=$(echo "$input" | jq -r '.password // empty' 2>/dev/null)
+days=$(echo "$input" | jq -r '.expired // .masa // empty' 2>/dev/null)
+limit_ip=$(echo "$input" | jq -r '.limit_ip // .iplimit // 0' 2>/dev/null)
+
+err_json() { echo "{\"status\":\"false\",\"code\":$1,\"message\":\"$2\"}"; exit 1; }
+
+valid_username "$user"   || err_json 400 "Invalid username (3-32 chars: letters, numbers, underscore)"
+valid_password "$pass"   || err_json 400 "Invalid password (no spaces/tabs/newlines/colons)"
+valid_days "$days"       || err_json 400 "Expired must be 1-3650 days"
+valid_number "$limit_ip" || err_json 400 "Limit IP must be a number"
+
+if db_account_exists "ssh" "$user" || id "$user" &>/dev/null; then
+  err_json 409 "Username '$user' already exists"
+fi
+
+if ! acc_ssh_create "$user" "$pass" "$limit_ip" "$days" >/dev/null 2>&1; then
+  err_json 500 "Failed to create SSH account"
+fi
+
+exp_epoch=$(db_get_field "ssh" "$user" "expired_at")
+exp_disp=$(date -d "@${exp_epoch}" +"%d-%m-%Y %H:%M:%S")
+
+dns_ns=$(cat /etc/slowdns/nameserver 2>/dev/null | tr -d '\r\n')
+dns_pub=$(cat /etc/slowdns/server.pub 2>/dev/null | tr -d '\r\n')
+
+jq -nc --arg u "$user" --arg p "$pass" --arg d "$domain" --arg ip "$ip" \
+      --argjson li "$limit_ip" --arg exp "$exp_disp" \
+      --arg dns_ns "$dns_ns" --arg dns_pub "$dns_pub" \
+'{status:"true",code:201,message:"SSH account created successfully",
+  data:{username:$u,password:$p,domain:$d,ip:$ip,limit_ip:$li,expired:$exp,
+         ports:{ssh:"109",ws_http:"80, 8888",ws_tls:"443",badvpn:"7300",
+                openvpn_tcp:"1194",
+                slowdns:(if $dns_pub != "" then "53, 5300" else null end)},
+         slowdns:(if $dns_pub != "" then {nameserver:$dns_ns,public_key:$dns_pub,port:"53, 5300 UDP"} else null end),
+        config:($d+":1-65535@"+$u+":"+$p)}}'

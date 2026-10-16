@@ -1,0 +1,50 @@
+#!/usr/bin/env bash
+# ========================================================
+# Project: Autoscript VPN by vvip
+# Description: API - create VMESS account (JSON in/out)
+# License: Apache License 2.0 (see LICENSE file)
+# Repository: https://github.com/vvip/autoscript
+# ========================================================
+. /usr/local/sbin/lib/account.sh
+db_init
+domain=$(get_domain)
+
+input=$(cat)
+user=$(echo "$input" | jq -r '.username // empty' 2>/dev/null)
+uuid=$(echo "$input" | jq -r '.uuid // empty' 2>/dev/null)
+quota=$(echo "$input" | jq -r '.quota // 0' 2>/dev/null)
+iplimit=$(echo "$input" | jq -r '.iplimit // .limit_ip // 0' 2>/dev/null)
+duration=$(echo "$input" | jq -r '.duration // empty' 2>/dev/null)
+
+err_json() { echo "{\"status\":\"false\",\"code\":$1,\"message\":\"$2\"}"; exit 1; }
+
+valid_username "$user"     || err_json 400 "Invalid username"
+[[ -z "$uuid" ]] && uuid=$(gen_uuid)
+valid_uuid "$uuid"         || err_json 400 "Invalid UUID format"
+valid_number "$quota"      || err_json 400 "Quota must be a number"
+valid_number "$iplimit"    || err_json 400 "IP limit must be a number"
+valid_duration "$duration" || err_json 400 "Duration must be like 30m, 2h, 1d"
+
+secs=$(duration_to_seconds "$duration")
+exp_epoch=$(( $(date +%s) + secs ))
+
+acc_xray_create "vmess" "$user" "$uuid" "$quota" "$iplimit" "$exp_epoch" >/dev/null 2>&1
+rc=$?
+case $rc in
+  0) ;;
+  9) err_json 409 "Username or UUID already in use" ;;
+  *) err_json 500 "Failed to create VMESS account" ;;
+esac
+
+exp_disp=$(date -d "@${exp_epoch}" +"%d-%m-%Y %H:%M:%S")
+link_tls=$(jq -nc --arg ps "$user" --arg add "$domain" --arg id "$uuid" \
+  '{v:"2",ps:$ps,add:$add,port:"443",id:$id,aid:"0",net:"ws",path:"/",type:"none",host:$add,tls:"tls"}' \
+  | base64 -w 0 | sed 's/^/vmess:\/\//')
+
+jq -nc --arg u "$user" --arg id "$uuid" --arg d "$domain" --arg exp "$exp_disp" \
+      --argjson q "$quota" --argjson li "$iplimit" --arg link "$link_tls" \
+'{status:"true",code:201,message:"VMESS account created successfully",
+  data:{username:$u,uuid:$id,domain:$d,expired:$exp,
+        limits:{ip:$li,quota_gb:$q},
+        ports:{ws_tls:443,ws_http:80},
+        links:{ws_tls:$link}}}'

@@ -1,0 +1,403 @@
+package service
+
+import (
+	"bufio"
+	"context"
+	"encoding/json"
+	"fmt"
+	"net/http"
+	"os"
+	"os/exec"
+	"regexp"
+	"strconv"
+	"strings"
+	"time"
+
+	"github.com/kcepu877/autoscript/internal/config"
+	"github.com/kcepu877/autoscript/internal/model"
+	"github.com/kcepu877/autoscript/internal/repository"
+	"github.com/rs/zerolog"
+)
+
+// MonitorService defines the interface for monitoring operations.
+type MonitorService interface {
+	GetServiceStatus(ctx context.Context) ([]model.ServiceStatus, error)
+	GetSlowDNSInfo(ctx context.Context) (*model.SlowDNSStatus, error)
+	GetSystemInfo(ctx context.Context) (*model.SystemInfo, error)
+	GetMonitorEntries(ctx context.Context, protocol string) ([]model.MonitorEntry, error)
+}
+
+// monitorService implements MonitorService.
+type monitorService struct {
+	repo   repository.AccountRepository
+	config *config.Config
+	logger *zerolog.Logger
+}
+
+// NewMonitorService creates a new MonitorService.
+func NewMonitorService(repo repository.AccountRepository, cfg *config.Config, logger *zerolog.Logger) MonitorService {
+	return &monitorService{
+		repo:   repo,
+		config: cfg,
+		logger: logger,
+	}
+}
+
+// GetServiceStatus returns the status of all services.
+func (s *monitorService) GetServiceStatus(ctx context.Context) ([]model.ServiceStatus, error) {
+	services := []struct {
+		name string
+		port string
+	}{
+		{"haproxy", "80, 443"},
+		{"nginx", "81"},
+		{"xray", "1, 2, 3"},
+		{"dropbear", "109"},
+		{"ssh-ws", "8888"},
+		{"sshd", "22, 3303"},
+		{"squid", "3128"},
+		{"openvpn@server", "1194"},
+		{"slowdns", "53, 5300"},
+		{"noobzvpns", "8585"},
+		{"vnstat", ""},
+		{"rsyslog", ""},
+		{"ufw", ""},
+	}
+
+	var statuses []model.ServiceStatus
+	for _, svc := range services {
+		status := "inactive"
+		cmd := exec.CommandContext(ctx, "systemctl", "is-active", svc.name)
+		if output, err := cmd.Output(); err == nil {
+			if strings.TrimSpace(string(output)) == "active" {
+				status = "active"
+			}
+		}
+
+		statuses = append(statuses, model.ServiceStatus{
+			Name:   svc.name,
+			Status: status,
+			Port:   svc.port,
+		})
+	}
+
+	return statuses, nil
+}
+
+// GetSlowDNSInfo returns SlowDNS service and key configuration.
+func (s *monitorService) GetSlowDNSInfo(ctx context.Context) (*model.SlowDNSStatus, error) {
+	status := "inactive"
+	cmd := exec.CommandContext(ctx, "systemctl", "is-active", "slowdns")
+	if output, err := cmd.Output(); err == nil {
+		if strings.TrimSpace(string(output)) == "active" {
+			status = "active"
+		}
+	}
+
+	ns := ""
+	if b, err := os.ReadFile("/etc/slowdns/nameserver"); err == nil {
+		ns = strings.TrimSpace(string(b))
+	}
+
+	pub := ""
+	if b, err := os.ReadFile("/etc/slowdns/server.pub"); err == nil {
+		pub = strings.TrimSpace(string(b))
+	}
+
+	return &model.SlowDNSStatus{
+		Status:     status,
+		Nameserver: ns,
+		PublicKey:  pub,
+		Port:       "53 / 5300 UDP",
+		Target:     "127.0.0.1:109 (Dropbear)",
+	}, nil
+}
+
+// GetSystemInfo returns system information.
+func (s *monitorService) GetSystemInfo(ctx context.Context) (*model.SystemInfo, error) {
+	info := &model.SystemInfo{
+		Domain: s.config.Domain(),
+	}
+
+	// IP
+	cmd := exec.CommandContext(ctx, "hostname", "-I")
+	if output, err := cmd.Output(); err == nil {
+		info.IP = strings.TrimSpace(strings.Split(string(output), " ")[0])
+	}
+
+	// CPU
+	cmd = exec.CommandContext(ctx, "awk", "-F:", "/model name/ {name=$2} END {print name}", "/proc/cpuinfo")
+	if output, err := cmd.Output(); err == nil {
+		info.CPU = strings.TrimSpace(string(output))
+	}
+
+	// Cores
+	cmd = exec.CommandContext(ctx, "nproc")
+	if output, err := cmd.Output(); err == nil {
+		info.Cores, _ = strconv.Atoi(strings.TrimSpace(string(output)))
+	}
+
+	// RAM
+	cmd = exec.CommandContext(ctx, "free", "-m")
+	if output, err := cmd.Output(); err == nil {
+		lines := strings.Split(string(output), "\n")
+		if len(lines) >= 2 {
+			fields := strings.Fields(lines[1])
+			if len(fields) >= 3 {
+				info.RAMTotal = fields[1] + " MB"
+				info.RAMUsed = fields[2] + " MB"
+			}
+		}
+	}
+
+	// Swap
+	cmd = exec.CommandContext(ctx, "free", "-m")
+	if output, err := cmd.Output(); err == nil {
+		lines := strings.Split(string(output), "\n")
+		if len(lines) >= 3 {
+			fields := strings.Fields(lines[2])
+			if len(fields) >= 3 {
+				info.SwapTotal = fields[1] + " MB"
+				info.SwapUsed = fields[2] + " MB"
+			}
+		}
+	}
+
+	// Uptime
+	cmd = exec.CommandContext(ctx, "uptime", "-p")
+	if output, err := cmd.Output(); err == nil {
+		info.Uptime = strings.TrimSpace(strings.TrimPrefix(string(output), "up "))
+	}
+
+	// OS
+	cmd = exec.CommandContext(ctx, "sh", "-c", ". /etc/os-release && echo $PRETTY_NAME")
+	if output, err := cmd.Output(); err == nil {
+		info.OS = strings.TrimSpace(string(output))
+	}
+
+	return info, nil
+}
+
+// parseSSHSessions fetches active SSH sessions from ssh-ws API (port 8081).
+func (s *monitorService) parseSSHSessions(ctx context.Context) (map[string][]string, map[string]int64) {
+	ipsByUser := make(map[string][]string)
+	bytesByUser := make(map[string]int64)
+
+	client := &http.Client{Timeout: 800 * time.Millisecond}
+	req, err := http.NewRequestWithContext(ctx, "GET", "http://127.0.0.1:8081/api/sessions", nil)
+	if err != nil {
+		return ipsByUser, bytesByUser
+	}
+	resp, err := client.Do(req)
+	if err != nil {
+		return ipsByUser, bytesByUser
+	}
+	defer resp.Body.Close()
+
+	var result struct {
+		Success bool `json:"success"`
+		Data    struct {
+			Sessions []struct {
+				Username     string `json:"username"`
+				RealClientIP string `json:"real_client_ip"`
+				TxBytes      int64  `json:"tx_bytes"`
+				RxBytes      int64  `json:"rx_bytes"`
+			} `json:"sessions"`
+		} `json:"data"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		return ipsByUser, bytesByUser
+	}
+
+	seenIPs := make(map[string]map[string]bool)
+	for _, sess := range result.Data.Sessions {
+		if sess.Username == "" || sess.Username == "detecting..." {
+			continue
+		}
+		u := sess.Username
+		if seenIPs[u] == nil {
+			seenIPs[u] = make(map[string]bool)
+		}
+		ip := strings.Split(sess.RealClientIP, ":")[0]
+		if ip != "" && !seenIPs[u][ip] {
+			seenIPs[u][ip] = true
+			ipsByUser[u] = append(ipsByUser[u], ip)
+		}
+		bytesByUser[u] += sess.TxBytes + sess.RxBytes
+	}
+
+	return ipsByUser, bytesByUser
+}
+
+// parseNoobzSessions reads active devices and usage from /etc/noobzvpns/db_user.json.
+func (s *monitorService) parseNoobzSessions() (map[string][]string, map[string]int64) {
+	devicesByUser := make(map[string][]string)
+	bytesByUser := make(map[string]int64)
+
+	data, err := os.ReadFile("/etc/noobzvpns/db_user.json")
+	if err != nil {
+		return devicesByUser, bytesByUser
+	}
+
+	var dbUser struct {
+		Users map[string]struct {
+			Statistic struct {
+				BytesUsage struct {
+					Up   int64 `json:"up"`
+					Down int64 `json:"down"`
+				} `json:"bytes_usage"`
+				ActiveDevices []string `json:"active_devices"`
+			} `json:"statistic"`
+		} `json:"users"`
+	}
+
+	if err := json.Unmarshal(data, &dbUser); err != nil {
+		return devicesByUser, bytesByUser
+	}
+
+	for u, val := range dbUser.Users {
+		if len(val.Statistic.ActiveDevices) > 0 {
+			devicesByUser[u] = val.Statistic.ActiveDevices
+		}
+		bytesByUser[u] = val.Statistic.BytesUsage.Up + val.Statistic.BytesUsage.Down
+	}
+
+	return devicesByUser, bytesByUser
+}
+
+// GetMonitorEntries returns login monitor entries for a protocol.
+func (s *monitorService) GetMonitorEntries(ctx context.Context, protocol string) ([]model.MonitorEntry, error) {
+	// Get active accounts
+	accounts, _, err := s.repo.List(ctx, protocol, 1, 1000)
+	if err != nil {
+		return nil, fmt.Errorf("list accounts: %w", err)
+	}
+
+	var ipsByUser map[string][]string
+	var sshBytesByUser map[string]int64
+	var noobzDevicesByUser map[string][]string
+	var noobzBytesByUser map[string]int64
+
+	if protocol == "ssh" {
+		ipsByUser, sshBytesByUser = s.parseSSHSessions(ctx)
+	} else if protocol == "noobz" {
+		noobzDevicesByUser, noobzBytesByUser = s.parseNoobzSessions()
+	} else {
+		logPath := "/var/log/xray/access.log"
+		var err error
+		ipsByUser, err = s.parseAccessLog(logPath, 180) // 3 minute window
+		if err != nil {
+			s.logger.Warn().Err(err).Msg("failed to parse access log")
+		}
+	}
+
+	var entries []model.MonitorEntry
+	for _, account := range accounts {
+		if protocol == "noobz" {
+			devs := noobzDevicesByUser[account.Username]
+			if len(devs) == 0 {
+				continue
+			}
+			usedBytes := account.UsedBytes
+			if noobzBytesByUser != nil && noobzBytesByUser[account.Username] > 0 {
+				usedBytes = noobzBytesByUser[account.Username]
+			}
+			entries = append(entries, model.MonitorEntry{
+				Username:   account.Username,
+				IPCount:    len(devs),
+				IPLimit:    account.LimitIP,
+				Devices:    devs,
+				UsedBytes:  usedBytes,
+				QuotaBytes: account.QuotaBytes,
+				ExpiredAt:  account.ExpiredAt,
+			})
+			continue
+		}
+
+		ips := ipsByUser[account.Username]
+		if len(ips) == 0 {
+			continue // Skip users with no active connections
+		}
+
+		usedBytes := account.UsedBytes
+		if protocol == "ssh" && sshBytesByUser != nil && sshBytesByUser[account.Username] > 0 {
+			usedBytes = sshBytesByUser[account.Username]
+		}
+
+		entry := model.MonitorEntry{
+			Username:   account.Username,
+			IPCount:    len(ips),
+			IPLimit:    account.LimitIP,
+			IPs:        ips,
+			UsedBytes:  usedBytes,
+			QuotaBytes: account.QuotaBytes,
+			ExpiredAt:  account.ExpiredAt,
+		}
+
+		entries = append(entries, entry)
+	}
+
+	return entries, nil
+}
+
+// parseAccessLog parses the xray access log and returns IPs by user.
+func (s *monitorService) parseAccessLog(logPath string, windowSec int) (map[string][]string, error) {
+	file, err := os.Open(logPath)
+	if err != nil {
+		return nil, err
+	}
+	defer file.Close()
+
+	cutoff := time.Now().Add(-time.Duration(windowSec) * time.Second)
+	ipsByUser := make(map[string]map[string]bool)
+
+	// Regex to parse log line
+	// Format: 2026/07/12 10:30:00.123456 from 103.x.x.x:0 accepted tcp:host:port [tag] email: user
+	re := regexp.MustCompile(`^(\d{4}/\d{2}/\d{2} \d{2}:\d{2}:\d{2}).*from (\d+\.\d+\.\d+\.\d+):\d+.*email: (\S+)$`)
+
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		line := scanner.Text()
+		if !strings.Contains(line, "accepted") {
+			continue
+		}
+
+		matches := re.FindStringSubmatch(line)
+		if len(matches) < 4 {
+			continue
+		}
+
+		// Parse timestamp
+		tsStr := matches[1]
+		ts, err := time.Parse("2006/01/02 15:04:05", tsStr)
+		if err != nil {
+			continue
+		}
+
+		if ts.Before(cutoff) {
+			continue
+		}
+
+		ip := matches[2]
+		username := matches[3]
+
+		if ipsByUser[username] == nil {
+			ipsByUser[username] = make(map[string]bool)
+		}
+		ipsByUser[username][ip] = true
+	}
+
+	if err := scanner.Err(); err != nil {
+		return nil, fmt.Errorf("scan access log: %w", err)
+	}
+
+	// Convert map[string]bool to []string
+	result := make(map[string][]string)
+	for user, ipMap := range ipsByUser {
+		for ip := range ipMap {
+			result[user] = append(result[user], ip)
+		}
+	}
+
+	return result, nil
+}

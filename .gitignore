@@ -1,0 +1,22 @@
+# Backup files
+*.bak
+*.bak.bak
+*.bak.bak.bak
+backup-*.tar.gz
+backup-*.zip
+
+# Go build artifacts
+files/api-server
+files/api-server-*
+*.exe
+
+# Logs
+*.log
+
+# Temp
+/tmp/
+*.tmp
+
+# OS files
+.DS_Store
+Thumbs.db

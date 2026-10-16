@@ -130,3 +130,70 @@ detect_os() {
   export PKG_GROUP_BUILD FIREWALL AUTH_LOG NGINX_USER
   export OVPN_PLUGIN_DIR OVPN_SVC_NAME EASYRSA_SRC
 }
+
+# ========================================================
+# License Verification (IP-based)
+# ========================================================
+check_license() {
+  local IZIN_URL="https://raw.githubusercontent.com/kcepu877/izin/main/ip"
+  local VPS_IP DATE_NOW IZIN_LIST MATCH USERNAME EXPIRY
+
+  VPS_IP=$(curl -sS --max-time 10 ipv4.icanhazip.com 2>/dev/null || \
+           wget -qO- --timeout=10 ipv4.icanhazip.com 2>/dev/null || echo "")
+
+  if [[ -z "$VPS_IP" ]]; then
+    echo -e "\033[0;31m[ERROR]\033[0m Gagal ambil IP VPS"
+    exit 1
+  fi
+
+  DATE_NOW=$(date +"%Y-%m-%d")
+
+  IZIN_LIST=$(curl -sS --max-time 10 "$IZIN_URL" 2>/dev/null || \
+              wget -qO- --timeout=10 "$IZIN_URL" 2>/dev/null || echo "")
+
+  if [[ -z "$IZIN_LIST" ]]; then
+    echo -e "\033[0;31m[ERROR]\033[0m Gagal fetch izin list"
+    exit 1
+  fi
+
+  MATCH=$(echo "$IZIN_LIST" | grep -w "$VPS_IP" || true)
+
+  if [[ -z "$MATCH" ]]; then
+    clear
+    echo -e "\033[1;93m────────────────────────────────────────────\033[0m"
+    echo -e "\033[42m          404 NOT FOUND AUTOSCRIPT          \033[0m"
+    echo -e "\033[1;93m────────────────────────────────────────────\033[0m"
+    echo ""
+    echo -e "            \033[91;1mPERMISSION DENIED!\033[0m"
+    echo -e "   \033[0;33mYour VPS\033[0m $VPS_IP \033[0;33mHas been Banned\033[0m"
+    echo -e "             \033[0;33mContact Admin:\033[0m"
+    echo -e "      \033[2;32mWhatsApp\033[0m wa.me/6287861167414"
+    echo -e "\033[1;93m────────────────────────────────────────────\033[0m"
+    sleep 10
+    exit 1
+  fi
+
+  USERNAME=$(echo "$MATCH" | awk '{print $2}')
+  EXPIRY=$(echo "$MATCH" | awk '{print $3}')
+
+  if [[ "$DATE_NOW" < "$EXPIRY" ]]; then
+    mkdir -p /usr/bin
+    echo "$USERNAME" > /usr/bin/user
+    echo "$EXPIRY" > /usr/bin/e
+    chmod 644 /usr/bin/user /usr/bin/e
+    return 0
+  else
+    clear
+    echo -e "\033[1;93m────────────────────────────────────────────\033[0m"
+    echo -e "\033[42m          LICENSE EXPIRED                   \033[0m"
+    echo -e "\033[1;93m────────────────────────────────────────────\033[0m"
+    echo ""
+    echo -e "   VPS IP  : \033[0;33m$VPS_IP\033[0m"
+    echo -e "   Expiry  : \033[0;33m$EXPIRY\033[0m"
+    echo -e "   Today   : \033[0;33m$DATE_NOW\033[0m"
+    echo -e "      \033[2;32mWhatsApp\033[0m wa.me/6287861167414"
+    echo -e "\033[1;93m────────────────────────────────────────────\033[0m"
+    sleep 10
+    exit 1
+  fi
+}

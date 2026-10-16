@@ -26,6 +26,7 @@ echo ""
 # --- Daftar modul (urutan penting!) ---
 MODULES=(
   00-preflight
+  00-license
   01-package
   02-system
   03-firewall

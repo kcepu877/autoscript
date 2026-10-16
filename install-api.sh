@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ========================================================
-# Project: Autoscript VPN by vvip
+# Project: Autoscript VPN by kcepu877
 # Description: Enterprise RESTful API Server Installer & Builder
 # Multi-OS: Rocky Linux 9, Ubuntu 20/22, Debian 12
 # License: Apache License 2.0 (see LICENSE file)

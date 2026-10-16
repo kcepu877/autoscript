@@ -1,9 +1,9 @@
 #!/bin/bash
 # ========================================================
-# Project: Autoscript VPN by vvip
+# Project: Autoscript VPN by kcepu877
 # Description: Main Installer (Orchestrator)
 # Version: 5.4.0-modular
-# Repository: https://github.com/vvip/autoscript
+# Repository: https://github.com/kcepu877/autoscript
 # ========================================================
 set -euo pipefail
 

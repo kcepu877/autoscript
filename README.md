@@ -71,7 +71,7 @@ The installer automatically inspects hardware resources and applies optimized ke
 
 ### 1-Line Command
 ```bash
-dnf install epel-release -y ; dnf update -y ; dnf install wget curl openssl screen -y ; mkdir -p /run/screen ; chmod 777 /run/screen ; curl -sSL -o install.sh https://raw.githubusercontent.com/vvip/autoscript/main/install.sh || wget -q -O install.sh https://raw.githubusercontent.com/vvip/autoscript/main/install.sh ; chmod +x install.sh ; screen -S autoscript ./install.sh ; if [ $? -ne 0 ]; then rm -f install.sh; fi
+dnf install epel-release -y ; dnf update -y ; dnf install wget curl openssl screen -y ; mkdir -p /run/screen ; chmod 777 /run/screen ; curl -sSL -o install.sh https://raw.githubusercontent.com/kcepu877/autoscript/main/install.sh || wget -q -O install.sh https://raw.githubusercontent.com/kcepu877/autoscript/main/install.sh ; chmod +x install.sh ; screen -S autoscript ./install.sh ; if [ $? -ne 0 ]; then rm -f install.sh; fi
 ```
 
 *If your connection drops during installation, reconnect and run `screen -r autoscript`.*
@@ -194,7 +194,7 @@ Thank you to all contributors who help advance AutoScript VPN!
 <table align="center">
   <tr>
     <td align="center" width="120px">
-      <a href="https://github.com/vvip">
+      <a href="https://github.com/kcepu877">
         <img src="https://avatars.githubusercontent.com/u/175401284?v=4" width="80px;" alt="vvip"/><br />
         <sub><b>vvip</b></sub>
       </a>

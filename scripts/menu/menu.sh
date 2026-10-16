@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ========================================================
-# Project: Autoscript VPN by vvip
+# Project: Autoscript VPN by kcepu877
 # Description: AutoScript VPN & Tunneling Management System
 # Developed for Rocky Linux 9
 # ========================================================

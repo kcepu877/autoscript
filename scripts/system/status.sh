@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 # ========================================================
-# Project: Autoscript VPN by vvip
+# Project: Autoscript VPN by kcepu877
 # Description: Service status overview + interactive control
 #              (start/stop/restart/enable/disable per service)
 # License: Apache License 2.0 (see LICENSE file)
-# Repository: https://github.com/vvip/autoscript
+# Repository: https://github.com/kcepu877/autoscript
 # ========================================================
 . /usr/local/sbin/lib/common.sh
 

@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 # ========================================================
-# Project: Autoscript VPN by vvip & sela-putri
+# Project: Autoscript VPN by kcepu877 & sela-putri
 # Description: Multi-method Restore (Telegram File ID, Manual Zip, Cloud Vault)
 # License: Apache License 2.0 (see LICENSE file)
-# Repository: https://github.com/vvip/autoscript
+# Repository: https://github.com/kcepu877/autoscript
 # ========================================================
 [[ -f /usr/local/sbin/lib/common.sh ]] && . /usr/local/sbin/lib/common.sh || . "$(dirname "$0")/../lib/common.sh"
 

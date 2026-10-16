@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 # ========================================================
-# Project: Autoscript VPN by vvip
+# Project: Autoscript VPN by kcepu877
 # Description: RESTful API Management Menu (SQLite & Token Integrated)
 # Developed for Rocky Linux 9 / Enterprise Linux
 # License: Apache License 2.0 (see LICENSE file)
-# Repository: https://github.com/vvip/autoscript
+# Repository: https://github.com/kcepu877/autoscript
 # ========================================================
 [[ -f /usr/local/sbin/lib/common.sh ]] && . /usr/local/sbin/lib/common.sh
 
@@ -136,7 +136,7 @@ install_api_service() {
   elif [[ -f /root/autoscript/install-api.sh ]]; then
     bash /root/autoscript/install-api.sh
   else
-    curl -fsSL https://raw.githubusercontent.com/vvip/autoscript/main/install-api.sh | bash
+    curl -fsSL https://raw.githubusercontent.com/kcepu877/autoscript/main/install-api.sh | bash
   fi
   read -n 1 -s -r -p " Press any key to return..."
 }
@@ -148,7 +148,7 @@ uninstall_api_service() {
   elif [[ -f /root/autoscript/uninstall-api.sh ]]; then
     bash /root/autoscript/uninstall-api.sh
   else
-    curl -fsSL https://raw.githubusercontent.com/vvip/autoscript/main/uninstall-api.sh | bash
+    curl -fsSL https://raw.githubusercontent.com/kcepu877/autoscript/main/uninstall-api.sh | bash
   fi
   read -n 1 -s -r -p " Press any key to return..."
 }

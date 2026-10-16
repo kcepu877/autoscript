@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 # ========================================================
-# Project: Autoscript VPN by vvip
+# Project: Autoscript VPN by kcepu877
 # Description: Log maintenance (cap sizes; keep recent data for monitors)
 # License: Apache License 2.0 (see LICENSE file)
-# Repository: https://github.com/vvip/autoscript
+# Repository: https://github.com/kcepu877/autoscript
 # ========================================================
 # Truncating ssh-ws.log fully would drop the [CONNECT] lines that map a live
 # session's proxy-port to its real client IP, breaking the SSH monitor. So

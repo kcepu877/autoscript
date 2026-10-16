@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 # ========================================================
-# Project: Autoscript VPN by vvip
+# Project: Autoscript VPN by kcepu877
 # Description: DNS changer (Rocky Linux 9)
 # License: Apache License 2.0 (see LICENSE file)
-# Repository: https://github.com/vvip/autoscript
+# Repository: https://github.com/kcepu877/autoscript
 # ========================================================
 G='\033[0;32m'
 NC='\e[0m'

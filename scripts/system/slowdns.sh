@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 # ========================================================
-# Project: Autoscript VPN by vvip
+# Project: Autoscript VPN by kcepu877
 # Description: SlowDNS (DNSTT) Server Management
 # License: Apache License 2.0 (see LICENSE file)
-# Repository: https://github.com/vvip/autoscript
+# Repository: https://github.com/kcepu877/autoscript
 # ========================================================
 [[ -f /usr/local/sbin/lib/common.sh ]] && . /usr/local/sbin/lib/common.sh || . "$(dirname "$0")/../lib/common.sh"
 
@@ -88,7 +88,7 @@ slowdns_setup_service() {
 [Unit]
 Description=SlowDNS (DNSTT) Tunnel Server
 After=network.target
-Documentation=https://github.com/vvip/autoscript
+Documentation=https://github.com/kcepu877/autoscript
 
 [Service]
 Type=simple

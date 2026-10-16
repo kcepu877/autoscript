@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 # ========================================================
-# Project: Autoscript VPN by vvip
+# Project: Autoscript VPN by kcepu877
 # Description: Run every protocol's auto-expire pass in one shot.
 #              Invoked by the autoexpire.timer systemd unit (no cron).
 # License: Apache License 2.0 (see LICENSE file)
-# Repository: https://github.com/vvip/autoscript
+# Repository: https://github.com/kcepu877/autoscript
 # ========================================================
 # Each xp-* command is DB-driven and idempotent (safe to run every minute).
 xp-ssh

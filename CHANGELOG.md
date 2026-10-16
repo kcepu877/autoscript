@@ -344,17 +344,17 @@ First public beta. Developed for **Rocky Linux 9**.
   `/etc/xray/backup.pass` (chmod 600); private keys are chmod 600;
   `/etc/xray` is chmod 700.
 - Removed personal names; normalized repository URLs to
-  `github.com/vvip/autoscript`.
+  `github.com/kcepu877/autoscript`.
 
 ### Removed
 - Legacy `.txt` account files and `config.json` comment markers.
 - Ads Block (helium) menu entry.
 
-[5.4.0]: https://github.com/vvip/autoscript/releases/tag/v5.4.0
-[5.3.0]: https://github.com/vvip/autoscript/releases/tag/v5.3.0
-[5.2.0]: https://github.com/vvip/autoscript/releases/tag/v5.2.0
-[5.0.0]: https://github.com/vvip/autoscript/releases/tag/v5.0.0
-[4.0.0]: https://github.com/vvip/autoscript/releases/tag/v4.0.0
-[0.3.0-beta]: https://github.com/vvip/autoscript/releases/tag/v0.3.0-beta
-[0.2.0-beta]: https://github.com/vvip/autoscript/releases/tag/v0.2.0-beta
-[0.1.0-beta]: https://github.com/vvip/autoscript/releases/tag/v0.1.0-beta
+[5.4.0]: https://github.com/kcepu877/autoscript/releases/tag/v5.4.0
+[5.3.0]: https://github.com/kcepu877/autoscript/releases/tag/v5.3.0
+[5.2.0]: https://github.com/kcepu877/autoscript/releases/tag/v5.2.0
+[5.0.0]: https://github.com/kcepu877/autoscript/releases/tag/v5.0.0
+[4.0.0]: https://github.com/kcepu877/autoscript/releases/tag/v4.0.0
+[0.3.0-beta]: https://github.com/kcepu877/autoscript/releases/tag/v0.3.0-beta
+[0.2.0-beta]: https://github.com/kcepu877/autoscript/releases/tag/v0.2.0-beta
+[0.1.0-beta]: https://github.com/kcepu877/autoscript/releases/tag/v0.1.0-beta

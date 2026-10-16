@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 # ========================================================
-# Project: Autoscript VPN by vvip
+# Project: Autoscript VPN by kcepu877
 # Description: Bandwidth Usage Monitor via vnstat
 #              Daily / Weekly / Monthly / Yearly history
 # License: Apache License 2.0 (see LICENSE file)
-# Repository: https://github.com/vvip/autoscript
+# Repository: https://github.com/kcepu877/autoscript
 # ========================================================
 
 [[ -f /usr/local/sbin/lib/common.sh ]] && . /usr/local/sbin/lib/common.sh

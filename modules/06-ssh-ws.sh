@@ -22,7 +22,7 @@ case "$(uname -m)" in
 esac
 
 # --- Coba beberapa format asset name (dengan/tanpa 'v') ---
-base="https://github.com/vvip/websocket-proxy/releases/download/${SSHWS_VERSION}"
+base="https://github.com/kcepu877/websocket-proxy/releases/download/${SSHWS_VERSION}"
 tmp="$(mktemp -d)"
 
 # Kandidat nama asset (siapa tahu formatnya beda)
@@ -45,7 +45,7 @@ done
 if [[ -z "$asset" ]]; then
   print_error "Failed to download ssh-ws for ${arch}."
   print_error "Tried: ${CANDIDATES[*]}"
-  print_error "Check releases: https://github.com/vvip/websocket-proxy/releases"
+  print_error "Check releases: https://github.com/kcepu877/websocket-proxy/releases"
   rm -rf "$tmp"
   exit 1
 fi

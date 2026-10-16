@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 # ========================================================
-# Project: Autoscript VPN by vvip
+# Project: Autoscript VPN by kcepu877
 # Description: AutoScript VPN & Tunneling Management System
 # Developed for Rocky Linux 9
 # License: Apache License 2.0 (see LICENSE file)
-# Repository: https://github.com/vvip/autoscript
+# Repository: https://github.com/kcepu877/autoscript
 # ========================================================
 # System Uninstaller — removes everything install.sh created:
 #   services, binaries, command scripts, libraries, database, configs,

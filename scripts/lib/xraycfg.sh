@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 # ========================================================
-# Project: Autoscript VPN by vvip
+# Project: Autoscript VPN by kcepu877
 # Description: Pure-JSON Xray config management (jq + atomic + rollback)
 # License: Apache License 2.0 (see LICENSE file)
-# Repository: https://github.com/vvip/autoscript
+# Repository: https://github.com/kcepu877/autoscript
 # ========================================================
 [[ -n "${__AS_XRAYCFG_LOADED:-}" ]] && return 0
 __AS_XRAYCFG_LOADED=1

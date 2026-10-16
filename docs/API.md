@@ -2,7 +2,7 @@
 
 > **Version:** 5.4.0 (Production Release)  
 > **Server Engine:** High-performance Go RESTful Daemon (`api-server`) powered by FastHTTP & SQLite (Zero CGO)  
-> **Repository:** [https://github.com/vvip/autoscript](https://github.com/vvip/autoscript)
+> **Repository:** [https://github.com/kcepu877/autoscript](https://github.com/kcepu877/autoscript)
 
 ---
 

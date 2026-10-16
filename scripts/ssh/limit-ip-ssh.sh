@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 # ========================================================
-# Project: Autoscript VPN by vvip
+# Project: Autoscript VPN by kcepu877
 # Description: SSH IP-limit enforcement (live-session correlated; run by timer)
 # License: Apache License 2.0 (see LICENSE file)
-# Repository: https://github.com/vvip/autoscript
+# Repository: https://github.com/kcepu877/autoscript
 # ========================================================
 # Counts only CURRENTLY-LIVE sessions (not historical log lines):
 #   ss            -> live proxy-ports connected to dropbear:109

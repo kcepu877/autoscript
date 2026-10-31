@@ -22,7 +22,7 @@ case "$(uname -m)" in
 esac
 
 # --- Coba beberapa format asset name (dengan/tanpa 'v') ---
-base="https://github.com/kcepu877/websocket-proxy/releases/download/${SSHWS_VERSION}"
+base="https://github.com/risqinf/websocket-proxy/releases/download/${SSHWS_VERSION}"
 tmp="$(mktemp -d)"
 
 # Kandidat nama asset (siapa tahu formatnya beda)

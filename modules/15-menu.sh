@@ -6,7 +6,7 @@ detect_os
 
 print_info "Installing management menu (from repo)..."
 
-REPO_OWNER="vvip"
+REPO_OWNER="kcepu877"
 REPO_NAME="autoscript"
 REPO_BRANCH="${REPO_BRANCH:-main}"
 REPO_TARBALL="https://github.com/${REPO_OWNER}/${REPO_NAME}/archive/refs/heads/${REPO_BRANCH}.tar.gz"

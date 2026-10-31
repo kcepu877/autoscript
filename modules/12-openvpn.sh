@@ -4,6 +4,15 @@ set -euo pipefail
 . "$INSTALL_DIR/lib/helpers.sh"
 detect_os
 
+# Detect OpenVPN version (2.4 vs 2.5+)
+OVPN_VER=$(openvpn --version 2>&1 | head -1 | awk "{print \$2}")
+OVPN_MAJOR=$(echo "$OVPN_VER" | cut -d. -f1)
+if [[ "$OVPN_MAJOR" -ge 5 ]]; then
+  CIPHER_OPT="data-ciphers"
+else
+  CIPHER_OPT="ncp-ciphers"
+fi
+
 WEB_DIR="/var/www/html/vvip/openvpn"
 EASYRSA_DIR="/etc/openvpn/easy-rsa"
 
@@ -84,7 +93,7 @@ keepalive 10 120
 comp-lzo no
 push "comp-lzo no"
 cipher AES-128-GCM
-ncp-ciphers AES-128-GCM:AES-256-GCM
+${CIPHER_OPT} AES-128-GCM:AES-256-GCM
 auth SHA256
 plugin $PLUGIN_PAM login
 verify-client-cert none

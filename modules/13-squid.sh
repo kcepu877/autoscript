@@ -45,9 +45,9 @@ http_access allow all
 http_port 3128
 coredump_dir /var/spool/squid
 
-refresh_pattern ^ftp:144020%10080
-refresh_pattern -i (/cgi-bin/|\?) 00%0
-refresh_pattern .020%4320
+refresh_pattern ^ftp:           1440    20%     10080
+refresh_pattern -i (/cgi-bin/|\?) 0    0%      0
+refresh_pattern .               0    20%     4320
 SQ_EOF
 
 systemctl enable squid >/dev/null 2>&1

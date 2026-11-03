@@ -4,22 +4,14 @@ set -euo pipefail
 . "$INSTALL_DIR/lib/helpers.sh"
 detect_os
 
-# Detect OpenVPN version (2.4 vs 2.5+)
-OVPN_VER=$(openvpn --version 2>&1 | head -1 | awk "{print \$2}")
-OVPN_MAJOR=$(echo "$OVPN_VER" | cut -d. -f1)
-if [[ "$OVPN_MAJOR" -ge 5 ]]; then
-  CIPHER_OPT="data-ciphers"
-else
-  CIPHER_OPT="ncp-ciphers"
-fi
-
 WEB_DIR="/var/www/html/vvip/openvpn"
 EASYRSA_DIR="/etc/openvpn/easy-rsa"
 
 DOMAIN_FILE="/etc/xray/domain"
 if [[ -f "$DOMAIN_FILE" ]]; then DOMAIN=$(cat "$DOMAIN_FILE"); else DOMAIN="localhost"; fi
 
-if [[ -f /etc/openvpn/server/server-tcp-1194.conf || -f /etc/openvpn/server.conf ]]; then
+# Cek hanya config di lokasi yang benar
+if [[ -f /etc/openvpn/server/server-tcp-1194.conf ]]; then
   print_warn "OpenVPN already installed. Skipping."
   exit 0
 fi
@@ -31,6 +23,15 @@ if [[ "$OS_FAMILY" == "debian" ]]; then
   $PKG_INSTALL openvpn easy-rsa iptables-persistent >/dev/null 2>&1
 elif [[ "$OS_FAMILY" == "rhel" ]]; then
   $PKG_INSTALL openvpn easy-rsa iptables-services >/dev/null 2>&1
+fi
+
+# [FIX] Deteksi versi SETELAH openvpn terpasang, kutip awk dibetulkan
+OVPN_VER=$(openvpn --version 2>&1 | head -1 | awk '{print $2}')
+OVPN_MAJOR=$(echo "$OVPN_VER" | cut -d. -f1)
+if [[ "$OVPN_MAJOR" =~ ^[0-9]+$ ]] && [[ "$OVPN_MAJOR" -ge 5 ]]; then
+  CIPHER_OPT="data-ciphers"
+else
+  CIPHER_OPT="ncp-ciphers"
 fi
 
 mkdir -p "$WEB_DIR" "$EASYRSA_DIR" /etc/openvpn/server
@@ -67,11 +68,8 @@ done
 
 PLUGIN_PAM="${OVPN_PLUGIN_DIR}/openvpn-plugin-auth-pam.so"
 
-if [[ "$OS_FAMILY" == "debian" ]]; then
-  SERVER_CONF="/etc/openvpn/server.conf"
-else
-  SERVER_CONF="/etc/openvpn/server/server-tcp-1194.conf"
-fi
+# Semua OS pakai lokasi config yang sama
+SERVER_CONF="/etc/openvpn/server/server-tcp-1194.conf"
 
 cat >"$SERVER_CONF" <<OVPN_EOF
 port 1194
@@ -148,14 +146,9 @@ elif [[ "$OS_FAMILY" == "rhel" ]]; then
   firewall-cmd --reload >/dev/null 2>&1 || true
 fi
 
-if [[ "$OS_FAMILY" == "debian" ]]; then
-  systemctl enable openvpn@server >/dev/null 2>&1
-  systemctl restart openvpn@server >/dev/null 2>&1
-  check_service "openvpn@server" || print_warn "OpenVPN not active."
-else
-  systemctl enable openvpn-server@server-tcp-1194 >/dev/null 2>&1
-  systemctl restart openvpn-server@server-tcp-1194 >/dev/null 2>&1
-  check_service "openvpn-server@server-tcp-1194" || print_warn "OpenVPN not active."
-fi
+# Debian/Ubuntu juga pakai openvpn-server@ (bukan openvpn@)
+systemctl enable openvpn-server@server-tcp-1194 >/dev/null 2>&1
+systemctl restart openvpn-server@server-tcp-1194 >/dev/null 2>&1
+check_service "openvpn-server@server-tcp-1194" || print_warn "OpenVPN not active."
 
 print_success "Module 12-openvpn complete."

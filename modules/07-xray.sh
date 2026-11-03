@@ -4,6 +4,8 @@ set -euo pipefail
 . "$INSTALL_DIR/lib/helpers.sh"
 detect_os
 
+mv /usr/local/etc/xray/config.json
+mv /usr/local/etc/xray/config.json
 if [[ -f /etc/xray/config.json ]]; then
   print_warn "Xray already configured. Skipping."
   exit 0
@@ -60,7 +62,7 @@ cat >/etc/xray/config.json <<XRAY_EOF
 }
 XRAY_EOF
 
-bash -c "$(curl -L https://github.com/XTLS/Xray-install/raw/main/install-release.sh)" @ install -u nobody --version 25.10.15
+bash -c "$(curl -L https://github.com/XTLS/Xray-install/raw/main/install-release.sh)" @ install -u nobody --version v25.10.15
 
 mkdir -p /var/log/xray
 touch /var/log/xray/{access,error}.log

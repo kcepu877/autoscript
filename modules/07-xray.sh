@@ -60,7 +60,7 @@ cat >/etc/xray/config.json <<XRAY_EOF
 }
 XRAY_EOF
 
-bash -c "$(curl -L https://github.com/XTLS/Xray-install/raw/main/install-release.sh)" @ install -u nobody --version 25.10.15 >/dev/null 2>&1
+bash -c "$(curl -L https://github.com/XTLS/Xray-install/raw/main/install-release.sh)" @ install -u nobody --version 25.10.15
 
 mkdir -p /var/log/xray
 touch /var/log/xray/{access,error}.log

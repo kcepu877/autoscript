@@ -60,8 +60,7 @@ cat >/etc/xray/config.json <<XRAY_EOF
 XRAY_EOF
 
 # Instalasi resmi, tanpa -u, tanpa --version
-bash -c "$(curl -L https://github.com/XTLS/Xray-install/raw/main/install-release.sh)" @ install
-
+bash -c "$(curl -L https://github.com/XTLS/Xray-install/raw/main/install-release.sh)" @ install --version v25.10.15
 mkdir -p /var/log/xray
 touch /var/log/xray/{access,error}.log
 chown -R root:root /var/log/xray

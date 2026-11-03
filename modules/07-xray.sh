@@ -4,12 +4,9 @@ set -euo pipefail
 . "$INSTALL_DIR/lib/helpers.sh"
 detect_os
 
-mv /usr/local/etc/xray/config.json
-mv /usr/local/etc/xray/config.json
-if [[ -f /etc/xray/config.json ]]; then
-  print_warn "Xray already configured. Skipping."
-  exit 0
-fi
+# Backup config lama (jika ada)
+[ -f /usr/local/etc/xray/config.json ] && mv /usr/local/etc/xray/config.json /usr/local/etc/xray/config.json.bak 2>/dev/null || true
+[ -f /etc/xray/config.json ] && mv /etc/xray/config.json /etc/xray/config.json.bak 2>/dev/null || true
 
 print_info "Synchronizing Xray-core release 25.10.15..."
 mkdir -p /usr/local/share/xray
@@ -62,13 +59,15 @@ cat >/etc/xray/config.json <<XRAY_EOF
 }
 XRAY_EOF
 
-bash -c "$(curl -L https://github.com/XTLS/Xray-install/raw/main/install-release.sh)" @ install -u nobody --version v25.10.15
+# Instalasi resmi, tanpa -u, tanpa --version
+bash -c "$(curl -L https://github.com/XTLS/Xray-install/raw/main/install-release.sh)" @ install
 
 mkdir -p /var/log/xray
 touch /var/log/xray/{access,error}.log
 chown -R root:root /var/log/xray
 chmod 644 /var/log/xray/*.log
 
+# Hapus service unit lama, tulis ulang unit milik Autoscript
 rm -f /etc/systemd/system/xray.service /etc/systemd/system/xray@.service 2>/dev/null
 rm -rf /etc/systemd/system/xray.service.d 2>/dev/null
 

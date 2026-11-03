@@ -17,6 +17,9 @@ else
   echo "$DOMAIN" > "$DOMAIN_FILE"
 fi
 
+# [FIX 1] Bersihkan spasi / karakter escape (^[[B) dari file domain
+DOMAIN=$(echo "$DOMAIN" | tr -d '[:space:]')
+
 if [[ -f /etc/nginx/vvip.conf ]]; then
   print_warn "Nginx already configured. Skipping."
   exit 0
@@ -26,22 +29,25 @@ print_info "Installing nginx..."
 $PKG_INSTALL nginx >/dev/null 2>&1
 
 print_info "Obtaining SSL Certificate for $DOMAIN..."
+
+# [FIX 2] Install certbot langsung (APT/DNF), JANGAN pakai snap
 if [[ "$OS_FAMILY" == "debian" ]]; then
-  $PKG_INSTALL socat lsof >/dev/null 2>&1
-  if [[ "$OS_ID" == "ubuntu" && ( "$OS_VER" == "20.04" || "$OS_VER" == "22.04" ) ]]; then
-    $PKG_INSTALL snapd >/dev/null 2>&1
-    snap install --classic certbot >/dev/null 2>&1 || true
-    ln -sf /snap/bin/certbot /usr/bin/certbot 2>/dev/null || true
-  else
-    $PKG_INSTALL certbot >/dev/null 2>&1
-  fi
+  $PKG_INSTALL socat lsof certbot >/dev/null 2>&1
 elif [[ "$OS_FAMILY" == "rhel" ]]; then
   $PKG_INSTALL socat lsof certbot >/dev/null 2>&1
 fi
 
 systemctl stop httpd nginx 2>/dev/null || true
-certbot certonly --standalone --preferred-challenges http --agree-tos \
-  --email "www@${DOMAIN}" -d "$DOMAIN" --non-interactive || true
+
+# [FIX 3] Email nyata, bisa di-override lewat env CERTBOT_EMAIL
+CERTBOT_EMAIL="${CERTBOT_EMAIL:-seaker877@gmail.com}"
+
+# [FIX 4] Hapus || true, biar error Certbot kelihatan & langsung exit
+if ! certbot certonly --standalone --preferred-challenges http --agree-tos \
+      --email "$CERTBOT_EMAIL" -d "$DOMAIN" --non-interactive; then
+  print_error "Certbot gagal. Cek DNS A record & port 80 terbuka."
+  exit 1
+fi
 
 if [[ -f "/etc/letsencrypt/live/$DOMAIN/fullchain.pem" && \
       -f "/etc/letsencrypt/live/$DOMAIN/privkey.pem" ]]; then
@@ -180,6 +186,15 @@ NGX_EOF
 
 systemctl daemon-reload
 systemctl enable nginx --now >/dev/null 2>&1
-nginx -t 2>&1 | grep -q "syntax is ok" && print_success "Nginx config valid." || print_error "Nginx config invalid!"
+
+# [FIX 5] Kalau config invalid, exit — jangan lanjut ke print_success
+if nginx -t 2>&1 | grep -q "syntax is ok"; then
+  print_success "Nginx config valid."
+else
+  print_error "Nginx config invalid!"
+  nginx -t
+  exit 1
+fi
+
 check_service nginx
 print_success "Module 08-nginx complete."

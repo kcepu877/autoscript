@@ -218,7 +218,7 @@ ui_opt2 3 "VMESS"         9 "API Menu"
 ui_opt2 4 "TROJAN"       10 "System Menu"
 ui_opt2 5 "NoobzVPN"     11 "Backup / Restore"
 ui_opt2 6 "Auto Bulk"    00 "Change banner"
-ui_opt2 x "Exit"           xx "REBOOT"
+ui_opt2 u "update"           xx "REBOOT"
 ui_rule
 ui_center "$xray_version"
 ui_foot

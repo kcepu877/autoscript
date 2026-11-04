@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ========================================================
-# Project: Autoscript VPN by kcepu877
+# Project: Autoscript VPN by vvip
 # Description: AutoScript VPN & Tunneling Management System
 # Developed for Rocky Linux 9
 # ========================================================
@@ -183,39 +183,46 @@ ui_kv "Traffic"  "$ttoday / $tyest / $tmon  (day/yest/mon)"
 ui_rule
 printf " ${WHITE}%-12s${NC} ${CYAN}:${NC} SSH ${PINK}[${GREEN}%s${PINK}]${NC}  VLESS ${PINK}[${GREEN}%s${PINK}]${NC}  VMESS ${PINK}[${GREEN}%s${PINK}]${NC}  TROJAN ${PINK}[${GREEN}%s${PINK}]${NC}  NOOBZ ${PINK}[${GREEN}%s${PINK}]${NC}\n" "Accounts" "$ssh1" "$vls" "$vms" "$tro" "$nbz"
 ui_rule
-ui_label "SERVICES"
-ui_status "SSH + WS"  "$resshws"
-[[ -s /etc/slowdns/server.pub ]] && ui_status "SlowDNS"   "$(svc_badge slowdns)"
-ui_status "Xray Core" "$resv2r"
-ui_status "Nginx"     "$resngx"
-ui_status "HAProxy"   "$reshap"
-ui_status "OpenVPN"   "$resovpn"
-ui_status "Squid"     "$ressquid"
-[[ -x /usr/bin/noobzvpns ]] && ui_status "NoobzVPN" "$resnbz"
-ui_status "API"       "$resapi"
-[[ -f /etc/rdns/client.yaml ]] && ui_status "RDNS Tunnel" "$(svc_badge rdns-client)"
+# 2-kolom status
+ui_status2() {
+  local n1="$1" b1="$2" n2="$3" b2="$4"
+  printf " ${WHITE}%-10s${NC} ${CYAN}:${NC} %-12b ${WHITE}%-10s${NC} ${CYAN}:${NC} %b\n" \
+    "$n1" "$b1" "$n2" "$b2"
+}
+ui_header "SERVICES"
 ui_rule
-ui_label "ACCOUNT PANELS"
-ui_opt 1 "SSH / OpenVPN Panel"
-ui_opt 2 "VLESS Panel (WS/HU/XHTTP/gRPC)"
-ui_opt 3 "VMESS Panel (WS/HU/XHTTP/gRPC)"
-ui_opt 4 "TROJAN Panel (WS/HU/XHTTP/gRPC)"
-ui_opt 5 "NoobzVPN Panel (TCP/WS)"
+ui_status2 "SSH + WS" "$resshws" "Xray Core" "$resv2r"   "Nginx"   "$resngx"
+ui_status2 "HAProxy"  "$reshap"  "OpenVPN"   "$resovpn"  "Squid"   "$ressquid"
+ui_status2 "API"      "$resapi"  "NoobzVPN"  "$resnbz"
+
 ui_rule
-ui_label "TOOLS"
-ui_opt 6 "Auto Bulk Create"
-ui_opt 7 "Account Cleaner"
-ui_opt 8 "User Checker"
-ui_opt 9 "API Menu"
+# 2-kolom option
+ui_opt2() {
+  local ln="$1" lt="$2" rn="$3" rt="$4"
+  printf "  ${PINK}(•%2s)${NC} ${WHITE}│${NC} %-25b ${PINK}(•%2s)${NC} ${WHITE}│${NC} %b\n" \
+    "$ln" "$lt" "$rn" "$rt"
+}
+# Center ke tengah layar (bukan 56)
+ui_center_full() {
+  local t="$1"
+  local w=$(tput cols 2>/dev/null || echo 80)
+  local pad=$(( (w - ${#t}) / 2 ))
+  (( pad < 0 )) && pad=0
+  printf "${WHITE}%*s%s${NC}\n" "$pad" "" "$t"
+}
+ui_header "ACCOUNT PANELS & TOOLS"
 ui_rule
-ui_label "SERVER"
-ui_opt 10 "System Menu"
-ui_opt 11 "Backup / Restore"
-ui_opt 12 "RDNS Client (mTLS Stealth Tunnel)"
-ui_opt x  "Exit"
+ui_opt2 1 "SSH"           7 "Account Cleaner"
+ui_opt2 2 "VLESS"         8 "User Checker"
+ui_opt2 3 "VMESS"         9 "API Menu"
+ui_opt2 4 "TROJAN"       10 "System Menu"
+ui_opt2 5 "NoobzVPN"     11 "Backup / Restore"
+ui_opt2 6 "Auto Bulk"    00 "Change banner"
+ui_opt2 x "Exit"           xx "REBOOT"
 ui_rule
-ui_kv "Xray" "$xray_version"
+ui_center "$xray_version"
 ui_foot
+ui_rule
 
 # --- MENU SELECTION ---
 read -p " Select Option : " mm
@@ -232,6 +239,7 @@ case $mm in
 10) clear ; run_cc ; menu-system ;;
 11) clear ; run_cc ; menu-backup ;;
 12) clear ; run_cc ; menu-rdns ;;
+xx) clear ; reboot ;;
 x|X) clear ; exit 0 ;;
 00) clear ; run_cc ; change-banner ;;
 *) echo "Invalid option, please try again." ; sleep 1 ; menu ;;
